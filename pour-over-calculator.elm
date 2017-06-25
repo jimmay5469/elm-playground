@@ -10,13 +10,13 @@ main =
 -- MODEL
 
 type alias Model =
-  { yield : Int
+  { maximumYield : Int
   , ratio : Int
   }
 
 model : Model
 model =
-  { yield = 300
+  { maximumYield = 300
   , ratio = 17
   }
 
@@ -24,17 +24,17 @@ model =
 -- UPDATE
 
 type Msg
-  = ChangeYield String
+  = ChangeMaximumYield String
   | ChangeRatio String
 
 update : Msg -> Model -> Model
 update msg model =
   case msg of
-    ChangeYield newYieldString ->
+    ChangeMaximumYield newMaximumYieldString ->
       let
-        newYieldInt = Result.withDefault model.yield (String.toInt newYieldString)
+        newMaximumYieldInt = Result.withDefault model.maximumYield (String.toInt newMaximumYieldString)
       in
-        { model | yield = newYieldInt }
+        { model | maximumYield = newMaximumYieldInt }
     ChangeRatio newRatioString ->
       let
         newRatioInt = Result.withDefault model.ratio (String.toInt newRatioString)
@@ -49,8 +49,8 @@ view model =
   div []
     [ div []
       [ div []
-        [ label [ for "yield" ] [ text "Yield: " ]
-        , input [ id "yield", type_ "number", placeholder "17", value (toString model.yield), onInput ChangeYield ] []
+        [ label [ for "maximumYield" ] [ text "Maximum Yield: " ]
+        , input [ id "maximumYield", type_ "number", placeholder "17", value (toString model.maximumYield), onInput ChangeMaximumYield ] []
         , text "ml"
         ]
       , div []
@@ -62,18 +62,23 @@ view model =
     , div []
       [ div []
         [ text "Coffee: "
-        , text (toString (coffee model.yield model.ratio))
+        , text (toString (coffee model.maximumYield model.ratio))
         , text "g"
         ]
       , div []
         [ text "Bloom Water: "
-        , text (toString (bloomWater model.yield model.ratio))
+        , text (toString (bloomWater model.maximumYield model.ratio))
         , text "g"
         ]
       , div []
         [ text "Total Water: "
-        , text (toString (totalWater model.yield model.ratio))
+        , text (toString (totalWater model.maximumYield model.ratio))
         , text "g"
+        ]
+      , div []
+        [ text "Expected Yield: "
+        , text (toString (expectedYield model.maximumYield model.ratio))
+        , text "ml"
         ]
       ]
     ]
@@ -82,18 +87,27 @@ view model =
 -- FUNCTIONS
 
 coffee : Int -> Int -> Int
-coffee yield ratio =
+coffee maximumYield ratio =
   let
-    yieldFloat = toFloat yield
+    maximumYieldFloat = toFloat maximumYield
     ratioFloat = toFloat ratio
-    coffee = yieldFloat / (ratioFloat - 1.5)
+    coffee = maximumYieldFloat / (ratioFloat - 1.5)
   in
     floor coffee
 
 bloomWater : Int -> Int -> Int
-bloomWater yield ratio =
-  2 * (coffee yield ratio)
+bloomWater maximumYield ratio =
+  2 * (coffee maximumYield ratio)
 
 totalWater : Int -> Int -> Int
-totalWater yield ratio =
-  ratio * (coffee yield ratio)
+totalWater maximumYield ratio =
+  ratio * (coffee maximumYield ratio)
+
+expectedYield : Int -> Int -> Int
+expectedYield maximumYield ratio =
+  let
+    totalWaterUsed = totalWater maximumYield ratio
+    coffeeWeight = coffee maximumYield ratio
+    groundsWater = floor (toFloat coffeeWeight * 1.5)
+  in
+    totalWaterUsed - groundsWater
