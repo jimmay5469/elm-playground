@@ -12,12 +12,14 @@ main =
 type alias Model =
   { maximumYield : Int
   , ratio : Int
+  , lossRatio : Float
   }
 
 model : Model
 model =
   { maximumYield = 300
   , ratio = 17
+  , lossRatio = 1.5
   }
 
 
@@ -26,6 +28,7 @@ model =
 type Msg
   = ChangeMaximumYield String
   | ChangeRatio String
+  | ChangeLossRatio String
 
 update : Msg -> Model -> Model
 update msg model =
@@ -40,6 +43,11 @@ update msg model =
         newRatioInt = Result.withDefault model.ratio (String.toInt newRatioString)
       in
         { model | ratio = newRatioInt }
+    ChangeLossRatio newLossRatioString ->
+      let
+        newLossRatioFloat = Result.withDefault model.lossRatio (String.toFloat newLossRatioString)
+      in
+        { model | lossRatio = newLossRatioFloat }
 
 
 -- VIEW
@@ -58,26 +66,31 @@ view model =
         , input [ id "ratio", type_ "number", placeholder "17", value (toString model.ratio), onInput ChangeRatio ] []
         , text ":1"
         ]
+      , div []
+        [ label [ for "lossRatio" ] [ text "Loss Ratio: " ]
+        , input [ id "lossRatio", type_ "number", placeholder "1.5", value (toString model.lossRatio), onInput ChangeLossRatio ] []
+        , text ":1"
+        ]
       ]
     , div []
       [ div []
         [ text "Coffee: "
-        , text (toString (coffee model.maximumYield model.ratio))
+        , text (toString (coffee model.maximumYield model.ratio model.lossRatio))
         , text "g"
         ]
       , div []
         [ text "Bloom Water: "
-        , text (toString (bloomWater model.maximumYield model.ratio))
+        , text (toString (bloomWater model.maximumYield model.ratio model.lossRatio))
         , text "g"
         ]
       , div []
         [ text "Total Water: "
-        , text (toString (totalWater model.maximumYield model.ratio))
+        , text (toString (totalWater model.maximumYield model.ratio model.lossRatio))
         , text "g"
         ]
       , div []
         [ text "Expected Yield: "
-        , text (toString (expectedYield model.maximumYield model.ratio))
+        , text (toString (expectedYield model.maximumYield model.ratio model.lossRatio))
         , text "ml"
         ]
       ]
@@ -86,28 +99,28 @@ view model =
 
 -- FUNCTIONS
 
-coffee : Int -> Int -> Int
-coffee maximumYield ratio =
+coffee : Int -> Int -> Float -> Int
+coffee maximumYield ratio lossRatio =
   let
     maximumYieldFloat = toFloat maximumYield
     ratioFloat = toFloat ratio
-    coffee = maximumYieldFloat / (ratioFloat - 1.5)
+    coffee = maximumYieldFloat / (ratioFloat - lossRatio)
   in
     floor coffee
 
-bloomWater : Int -> Int -> Int
-bloomWater maximumYield ratio =
-  2 * (coffee maximumYield ratio)
+bloomWater : Int -> Int -> Float -> Int
+bloomWater maximumYield ratio lossRatio =
+  2 * (coffee maximumYield ratio lossRatio)
 
-totalWater : Int -> Int -> Int
-totalWater maximumYield ratio =
-  ratio * (coffee maximumYield ratio)
+totalWater : Int -> Int -> Float -> Int
+totalWater maximumYield ratio lossRatio =
+  ratio * (coffee maximumYield ratio lossRatio)
 
-expectedYield : Int -> Int -> Int
-expectedYield maximumYield ratio =
+expectedYield : Int -> Int -> Float -> Int
+expectedYield maximumYield ratio lossRatio =
   let
-    totalWaterUsed = totalWater maximumYield ratio
-    coffeeWeight = coffee maximumYield ratio
-    groundsWater = floor (toFloat coffeeWeight * 1.5)
+    totalWaterUsed = totalWater maximumYield ratio lossRatio
+    coffeeWeight = coffee maximumYield ratio lossRatio
+    groundsWater = floor (lossRatio * (toFloat coffeeWeight))
   in
     totalWaterUsed - groundsWater
